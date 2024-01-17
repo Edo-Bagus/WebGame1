@@ -16,9 +16,8 @@ let moveCharacterY = 0;
 let backgroundX = 0;
 let backgroundY = 0;
 
-
 // player character
-let playerWidth = 21;
+let playerWidth = 50;
 let playerHeight = 37;
 let playerX = canvas.width/2 - playerWidth/2;
 let playerY= canvas.height/2 - playerHeight/2;
@@ -31,14 +30,35 @@ let player = {
     height : playerHeight
 }
 let charImg = new Image();
-charImg.src = "assets/characters/heroes/hero1.png";
+charImg.src = "assets/characters/heroes/hero.png";
 player.img = charImg;
+
+//attack
+let attackImg = new Image();
+let attackWidth = 65;
+let attackHeight = 27;
+let attackX = canvas.width/2 + playerWidth/2
+let attackY = canvas.height/2 - attackHeight/2
+attackImg.src = "assets/effect/effect.png";
+let attack = {
+    img: attackImg,
+    x : attackX,
+    y : attackY,
+    width : attackWidth,
+    height : attackHeight
+}
+let attackHitbox = {
+    x : attackX + 5,
+    y : attackY + 10,
+    width : attackWidth - 5,
+    height : attackHeight - 10
+}
 
 let enemiesArray = [];
 let enemiesWidth = 22;
-let enemiesHeight = 32;
+let enemiesHeight = 33;
 let enemiesImg = new Image();
-enemiesImg.src = "assets/characters/enemies/enemy1.png";
+enemiesImg.src = "assets/characters/enemies/enemy.png";
 
 class Enemy {
     constructor() {
@@ -53,6 +73,15 @@ class Enemy {
 let enemy = new Enemy();
 let timer = 0;
 
+let frameHeroIndex = 0;
+let frameAttIndex = 0;
+let frameEnemyIndex = 0;
+let framesHeroPerCol = 30;
+let framesAttPerCol = 30;
+let framesEnemyPerCol = 65;
+let animationHeroPerCol = framesHeroPerCol / 4;
+let animationAttPerCol = framesAttPerCol / 6;
+let animationEnemyPerCol = framesEnemyPerCol / 13;
 
 window.onload = function() {
     requestAnimationFrame(update);
@@ -63,6 +92,9 @@ window.onload = function() {
 function update() {
     //draw background
     timer += 1;
+    let heroCol = Math.floor(frameHeroIndex / animationHeroPerCol);
+    let attCol = Math.floor(frameAttIndex / animationAttPerCol);
+    let enemyCol = Math.floor(frameEnemyIndex / animationEnemyPerCol);
     context.drawImage(backgroundImg, backgroundX + (-1 * backgroundSize), backgroundY + (-1 * backgroundSize), backgroundSize, backgroundSize); //top left
     context.drawImage(backgroundImg, backgroundX + (-1 * backgroundSize), backgroundY, backgroundSize, backgroundSize); //center left
     context.drawImage(backgroundImg, backgroundX + (-1 * backgroundSize), backgroundY + backgroundSize, backgroundSize, backgroundSize); //bottom left
@@ -73,11 +105,12 @@ function update() {
     context.drawImage(backgroundImg, backgroundX + backgroundSize, backgroundY, backgroundSize, backgroundSize); //center right
     context.drawImage(backgroundImg, backgroundX + backgroundSize, backgroundY + backgroundSize, backgroundSize, backgroundSize); //bottom right
 
-    if (timer == 120 && enemiesArray.length > 0) {
+    
+    if (timer == 60 && enemiesArray.length > 0) {
         makeEnemies();
         timer = 0;
     }
-
+    
     for(let i = 0; i < enemiesArray.length; i++){
         let enemy = enemiesArray[i];
         //move logic for enemy
@@ -88,21 +121,33 @@ function update() {
         enemy.speed = pythagoras(enemy.directionX, enemy.directionY);
         enemy.x += enemy.directionX / enemy.speed;
         enemy.y += enemy.directionY / enemy.speed;
-        context.drawImage(enemy.img, enemy.x, enemy.y, enemy.width, enemy.height);
+        
+        if(detectCollision(attackHitbox, enemy) && (attCol == 1 || attCol == 2)){
+            enemiesArray.splice(i, 1);
+        }
+        else {
+            context.drawImage(enemy.img, enemyCol * enemy.width, 0, enemy.width, enemy.height, enemy.x, enemy.y, enemy.width, enemy.height);
+        }
     }
     moveCharacterX = 0;
     moveCharacterY = 0;
-
-
+        
+    context.drawImage(attack.img, attCol * attackWidth, 0, attack.width, attack.height, attack.x, attack.y, attack.width, attack.height);
+    
     //draw player
-    context.drawImage(player.img, player.x, player.y, player.width, player.height);
+    context.drawImage(player.img, heroCol * playerWidth, 0, playerWidth, playerHeight, player.x, player.y, player.width, player.height);
 
+    //make background to center again, enabling infinite background
     if(backgroundX > 512 || backgroundX < -512){
         backgroundX = 0;
     }
     if(backgroundY > 512 || backgroundY < -512){
         backgroundY = 0;
     }
+
+    frameHeroIndex = (frameHeroIndex + 1) % (framesHeroPerCol);
+    frameAttIndex = (frameAttIndex + 1) % (framesAttPerCol);
+    frameEnemyIndex = (frameEnemyIndex + 1) % (framesEnemyPerCol);
     
     requestAnimationFrame(update);
 }
