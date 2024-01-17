@@ -32,6 +32,13 @@ let player = {
 let charImg = new Image();
 charImg.src = "assets/characters/heroes/hero.png";
 player.img = charImg;
+let playerHitBox = {
+    x: playerX + 22,
+    y: playerY + 10,
+    width: playerWidth - 44,
+    height: playerHeight - 20
+
+}
 
 //attack
 let attackImg = new Image();
@@ -50,8 +57,8 @@ let attack = {
 let attackHitbox = {
     x : attackX + 5,
     y : attackY + 10,
-    width : attackWidth - 5,
-    height : attackHeight - 10
+    width : attackWidth - 10,
+    height : attackHeight - 20
 }
 
 let enemiesArray = [];
@@ -83,6 +90,8 @@ let animationHeroPerCol = framesHeroPerCol / 4;
 let animationAttPerCol = framesAttPerCol / 6;
 let animationEnemyPerCol = framesEnemyPerCol / 13;
 
+let gameOver = false;
+
 window.onload = function() {
     requestAnimationFrame(update);
     makeEnemies();
@@ -106,7 +115,7 @@ function update() {
     context.drawImage(backgroundImg, backgroundX + backgroundSize, backgroundY + backgroundSize, backgroundSize, backgroundSize); //bottom right
 
     
-    if (timer == 60 && enemiesArray.length > 0) {
+    if (timer == 60) {
         makeEnemies();
         timer = 0;
     }
@@ -122,6 +131,10 @@ function update() {
         enemy.x += enemy.directionX / enemy.speed;
         enemy.y += enemy.directionY / enemy.speed;
         
+        if(detectCollision(playerHitBox, enemy)){
+            gameOver = true;
+        }
+
         if(detectCollision(attackHitbox, enemy) && (attCol == 1 || attCol == 2)){
             enemiesArray.splice(i, 1);
         }
@@ -148,8 +161,16 @@ function update() {
     frameHeroIndex = (frameHeroIndex + 1) % (framesHeroPerCol);
     frameAttIndex = (frameAttIndex + 1) % (framesAttPerCol);
     frameEnemyIndex = (frameEnemyIndex + 1) % (framesEnemyPerCol);
+
+    context.fillStyle = "black";
+    context.font = "16px sans-serif";
+    context.textAlign = "center";
     
-    requestAnimationFrame(update);
+    if(!gameOver){
+        requestAnimationFrame(update);
+    } else {
+        context.fillText("Game Over: Press 'Space' to Restart", canvas.width/2, canvas.height/2 + 50 );
+    }
 }
 
 function moveCharacter(e) {
@@ -164,6 +185,13 @@ function moveCharacter(e) {
     }
     if(e.code == "KeyS"){
         moveVertical = -6;
+    }
+    if(e.code == "Space" && gameOver){
+        gameOver = false;
+        enemiesArray = [];
+        backgroundX = 0;
+        backgroundY = 0;
+        requestAnimationFrame(update);
     }
     backgroundX += moveHorizontal;
     backgroundY += moveVertical;
