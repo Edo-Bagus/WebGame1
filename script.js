@@ -25,12 +25,13 @@ let playerX = canvas.width/2 - playerWidth/2;
 let playerY= canvas.height/2 - playerHeight/2;
 let playerImage
 let charImg = new Image();
-charImg.src = "assets/characters/heroes/hero.png";
+charImg.src = "assets/characters/heroes/hero-right.png";
 let player = {
     img: charImg,
     x : playerX,
     y : playerY,
     speed: 0,
+    facing: "right",
     width : playerWidth,
     height : playerHeight
 }
@@ -68,7 +69,7 @@ let enemiesArray = [];
 let enemiesWidth = 22;
 let enemiesHeight = 33;
 let enemiesImg = new Image();
-enemiesImg.src = "assets/characters/enemies/enemy.png";
+enemiesImg.src = "assets/characters/enemies/enemy-right.png";
 class Enemy {
     constructor(spawnX, spawnY) {
         this.img = enemiesImg;
@@ -78,7 +79,10 @@ class Enemy {
         this.height = enemiesHeight;
     }
 }
+
+//other properties
 let timer = 0;
+let score = 0;
 
 //frame properties for animation
 let frameHeroIndex = 0;
@@ -99,27 +103,20 @@ context.font = "16px sans-serif";
 context.textAlign = "center";
 
 window.onload = function() {
+    //initial display before play
+    context.drawImage(backgroundImg, 0, 0, backgroundSize, backgroundSize);
+    context.fillText("Press 'Space' to Play", canvas.width/2, canvas.height/2);
     document,addEventListener("mousemove", characterMove);
     document.addEventListener("keydown", restartGame);
-    if(!gameOver){
-        makeEnemies();
-        requestAnimationFrame(update);
-    } else {
-        //initial display before play
-        context.drawImage(backgroundImg, 0, 0, backgroundSize, backgroundSize);
-        context.fillText("Press 'Space' to Play", canvas.width/2, canvas.height/2);
-    }
 }
 
 function update() {
-    //draw background
     timer += 1;
     let heroCol = Math.floor(frameHeroIndex / animationHeroPerCol);
     let attCol = Math.floor(frameAttIndex / animationAttPerCol);
     let enemyCol = Math.floor(frameEnemyIndex / animationEnemyPerCol);
-
     
-    
+    //draw background
     context.drawImage(backgroundImg, backgroundX + (-1 * backgroundSize), backgroundY + (-1 * backgroundSize), backgroundSize, backgroundSize); //top left
     context.drawImage(backgroundImg, backgroundX + (-1 * backgroundSize), backgroundY, backgroundSize, backgroundSize); //center left
     context.drawImage(backgroundImg, backgroundX + (-1 * backgroundSize), backgroundY + backgroundSize, backgroundSize, backgroundSize); //bottom left
@@ -130,11 +127,28 @@ function update() {
     context.drawImage(backgroundImg, backgroundX + backgroundSize, backgroundY, backgroundSize, backgroundSize); //center right
     context.drawImage(backgroundImg, backgroundX + backgroundSize, backgroundY + backgroundSize, backgroundSize, backgroundSize); //bottom right
     
-    backgroundX -= mouseX / player.speed;
-    backgroundY -= mouseY / player.speed;
-    moveCharacterX -= mouseX /player.speed;
-    moveCharacterY -= mouseY / player.speed;
+    //move background and entites based by player movement
+    // console.log(mouseX);
+    if(mouseX != 0 || mouseY != 0){
+        backgroundX -= mouseX / player.speed;
+        backgroundY -= mouseY / player.speed;
+        moveCharacterX -= mouseX /player.speed;
+        moveCharacterY -= mouseY / player.speed;
+    } else {
+        backgroundX -= 0;
+        backgroundY -= 0;
+        moveCharacterX -= 0;
+        moveCharacterY -= 0;
+    }
     
+    if(mouseX >= 0){
+        charImg.src = "assets/characters/heroes/hero-right.png";
+        player.img = charImg;
+    } else {
+        charImg.src = "assets/characters/heroes/hero-left.png";
+        player.img = charImg;
+    }
+    //spawn enemies
     if (timer == 60) {
         makeEnemies();
         timer = 0;
@@ -143,13 +157,20 @@ function update() {
     //move logic for enemy
     for(let i = 0; i < enemiesArray.length; i++){
         let enemy = enemiesArray[i];
-        enemy.x += moveCharacterX;
-        enemy.y += moveCharacterY;
         enemy.directionX = (player.x - enemy.x);
         enemy.directionY = (player.y - enemy.y);
         enemy.speed = pythagoras(enemy.directionX, enemy.directionY);
-        enemy.x += enemy.directionX / enemy.speed;
-        enemy.y += enemy.directionY / enemy.speed;
+        enemy.x += moveCharacterX + (enemy.directionX / enemy.speed);
+        enemy.y += moveCharacterY + (enemy.directionY / enemy.speed);
+
+        // console.log(enemy.x);
+        if (enemy.x <= canvas.width / 2){
+            enemiesImg.src = "assets/characters/enemies/enemy-right.png"
+            enemy.img = enemiesImg;
+        } else {
+            enemiesImg.src = "assets/characters/enemies/enemy-left.png"
+            enemy.img = enemiesImg;
+        }
         
         if(detectCollision(playerHitBox, enemy)){
             gameOver = true;
@@ -157,10 +178,10 @@ function update() {
         
         if(detectCollision(attackHitbox, enemy) && (attCol == 1 || attCol == 2)){
             enemiesArray.splice(i, 1);
+            score += 100;
         }
-        else {
-            context.drawImage(enemy.img, enemyCol * enemy.width, 0, enemy.width, enemy.height, enemy.x, enemy.y, enemy.width, enemy.height);
-        }
+        context.drawImage(enemy.img, enemyCol * enemy.width, 0, enemy.width, enemy.height, enemy.x, enemy.y, enemy.width, enemy.height);
+        
     }
     moveCharacterX = 0;
     moveCharacterY = 0;
@@ -183,7 +204,11 @@ function update() {
     frameHeroIndex = (frameHeroIndex + 1) % (framesHeroPerCol);
     frameAttIndex = (frameAttIndex + 1) % (framesAttPerCol);
     frameEnemyIndex = (frameEnemyIndex + 1) % (framesEnemyPerCol);
+
+    //draw score
+    context.fillText(score, canvas.width / 2, 25);
     
+    //game over logic
     if(!gameOver){
         requestAnimationFrame(update);
     } else {
@@ -197,20 +222,21 @@ function restartGame(e) {
         enemiesArray = [];
         backgroundX = 0;
         backgroundY = 0;
+        score = 0;
         requestAnimationFrame(update);
     }
 }
 
 function characterMove(e) {
+    // Get the mouse coordinates relative to the canvas
     let rect = canvas.getBoundingClientRect();
     mouseX = e.clientX - rect.left - rect.width / 2;
     mouseY = e.clientY - rect.top - rect.height / 2;
     player.speed = pythagoras(mouseX, mouseY) / 2;
-    // Get the mouse coordinates relative to the canvas
 }
 
 function makeEnemies() {
-    for(let i = 0; i < 4; i++){
+    for(let i = 0; i < 1; i++){
         let randomPair = EnemySpawner()
         let enemy = new Enemy(randomPair[0], randomPair[1]);
         enemiesArray.push(enemy);
