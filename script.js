@@ -49,7 +49,7 @@ let attackWidth = 65;
 let attackHeight = 27;
 let attackX = canvas.width/2 + playerWidth/2
 let attackY = canvas.height/2 - attackHeight/2
-attackImg.src = "assets/effect/effect.png";
+attackImg.src = "assets/attack/attack-right.png";
 let attack = {
     img: attackImg,
     x : attackX,
@@ -68,11 +68,12 @@ let attackHitbox = {
 let enemiesArray = [];
 let enemiesWidth = 22;
 let enemiesHeight = 33;
-let enemiesImg = new Image();
-enemiesImg.src = "assets/characters/enemies/enemy-right.png";
+let enemiesImgRight = new Image();
+enemiesImgRight.src = "assets/characters/enemies/enemy-right.png";
+let enemiesImgLeft = new Image();
+enemiesImgLeft.src = "assets/characters/enemies/enemy-left.png";
 class Enemy {
     constructor(spawnX, spawnY) {
-        this.img = enemiesImg;
         this.x = spawnX;
         this.y = spawnY; 
         this.width = enemiesWidth; 
@@ -88,10 +89,10 @@ let score = 0;
 let frameHeroIndex = 0;
 let frameAttIndex = 0;
 let frameEnemyIndex = 0;
-let framesHeroPerCol = 30;
+let framesHeroPerCol = 45;
 let framesAttPerCol = 30;
 let framesEnemyPerCol = 65;
-let animationHeroPerCol = framesHeroPerCol / 4;
+let animationHeroPerCol = framesHeroPerCol / 6;
 let animationAttPerCol = framesAttPerCol / 6;
 let animationEnemyPerCol = framesEnemyPerCol / 13;
 
@@ -144,9 +145,22 @@ function update() {
     if(mouseX >= 0){
         charImg.src = "assets/characters/heroes/hero-right.png";
         player.img = charImg;
+        attackImg.src = "assets/attack/attack-right.png";
+        attack.img = attackImg
+        attack.x = attackX;
+        attack.y = attackY;
+        attackHitbox.x = attackX + 5;
+        attackHitbox.y = attackY + 10;
     } else {
         charImg.src = "assets/characters/heroes/hero-left.png";
         player.img = charImg;
+        attackImg.src = "assets/attack/attack-left.png";
+        attack.img = attackImg;
+        attack.x = canvas.width / 2 - player.width / 2 - attack.width;
+        attack.y = attackY;
+        attackHitbox.x = canvas.width / 2 - player.width / 2 - attack.width + 5;
+        attackHitbox.y = attackY + 10;
+
     }
     //spawn enemies
     if (timer == 60) {
@@ -164,13 +178,6 @@ function update() {
         enemy.y += moveCharacterY + (enemy.directionY / enemy.speed);
 
         // console.log(enemy.x);
-        if (enemy.x <= canvas.width / 2){
-            enemiesImg.src = "assets/characters/enemies/enemy-right.png"
-            enemy.img = enemiesImg;
-        } else {
-            enemiesImg.src = "assets/characters/enemies/enemy-left.png"
-            enemy.img = enemiesImg;
-        }
         
         if(detectCollision(playerHitBox, enemy)){
             gameOver = true;
@@ -180,13 +187,20 @@ function update() {
             enemiesArray.splice(i, 1);
             score += 100;
         }
-        context.drawImage(enemy.img, enemyCol * enemy.width, 0, enemy.width, enemy.height, enemy.x, enemy.y, enemy.width, enemy.height);
-        
+        if (enemy.x <= canvas.width / 2){
+            context.drawImage(enemiesImgRight, enemyCol * enemy.width, 0, enemy.width, enemy.height, enemy.x, enemy.y, enemy.width, enemy.height);
+        } else {
+            context.drawImage(enemiesImgLeft, enemyCol * enemy.width, 0, enemy.width, enemy.height, enemy.x, enemy.y, enemy.width, enemy.height);
+        }
+            
     }
     moveCharacterX = 0;
     moveCharacterY = 0;
     
-    //draw enemy
+    // console.log(enemiesImg.src);
+
+    //draw attack
+
     context.drawImage(attack.img, attCol * attackWidth, 0, attack.width, attack.height, attack.x, attack.y, attack.width, attack.height);
     
     //draw player
@@ -236,7 +250,7 @@ function characterMove(e) {
 }
 
 function makeEnemies() {
-    for(let i = 0; i < 1; i++){
+    for(let i = 0; i < 3; i++){
         let randomPair = EnemySpawner()
         let enemy = new Enemy(randomPair[0], randomPair[1]);
         enemiesArray.push(enemy);
